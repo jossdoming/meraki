@@ -66,15 +66,16 @@ def get_traffic_shaping(network_id):
         print(f'Error obteniendo configuración de traffic shaping para la red {network_id}: {e}')
         return jsonify({'error': 'Fallo al obtener configuración de traffic shaping'}), 500
 
-# Función para resetear el ancho de banda después de 20 segundos
+# Función para resetear el ancho de banda después de 1 hora
 def reset_bandwidth(network_id, original_settings):
     global bandwidth_reset_time
     try:
-        threading.Event().wait(20)  # Espera 20 segundos
+        threading.Event().wait(10)  # Espera 1 hora
         response = requests.put(f'{BASE_URL}/networks/{network_id}/appliance/trafficShaping', headers=get_headers(), json=original_settings)
         response.raise_for_status()
         bandwidth_reset_time = None
         print(f'Ancho de banda reseteado a la configuración original para la red {network_id}')
+        
     except requests.exceptions.RequestException as e:
         print(f'Error reseteando el ancho de banda: {e}')
 
@@ -105,8 +106,8 @@ def update_traffic_shaping(network_id):
         update_response = requests.put(url, headers=headers, json=updated_bandwidth)
         update_response.raise_for_status()
 
-        # Programar el reseteo del ancho de banda en 20 segundos
-        bandwidth_reset_time = datetime.now() + timedelta(seconds=20)
+        # Programar el reseteo del ancho de banda en 10 segundos
+        bandwidth_reset_time = datetime.now() + timedelta(seconds=10)
         threading.Thread(target=reset_bandwidth, args=(network_id, current_settings)).start()
 
         return jsonify({
@@ -118,5 +119,5 @@ def update_traffic_shaping(network_id):
         print(f'Error actualizando configuración de traffic shaping: {e}')
         return jsonify({'error': 'Fallo al actualizar configuración de traffic shaping'}), 500
 
-if __name__ != '__main__':
+if __name__ == '__main__':
     app.run(port=5000, debug=True)
